@@ -104,7 +104,8 @@ func createArticle(title, body string) Article {
 
 func getArticle(article_id int) Article {  
     article := Article{}
-    err := dbmap.SelectOne(&article, "select * from articles where article_id=?", article_id)
-    checkErr(err, "SelectOne failed")
+    //err := dbmap.SelectOne(&article, "select * from articles where article_id=?", article_id)
+    //checkErr(err, "SelectOne failed")
+    dbmap.SelectOne(&article, "select * from articles where article_id=?", article_id)
     return article
 }
