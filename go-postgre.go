@@ -6,6 +6,8 @@ import (
  	_ "github.com/lib/pq"
  	"strconv"
  	"log"
+ 	//"fmt"
+ 	//"reflect"
 )
 ////
 
@@ -15,7 +17,7 @@ func initDb() *gorp.DbMap {
  	db, err := sql.Open("postgres", "postgres://postgres:09030015@localhost/gopgtest")
  	checkErr(err, "sql.Open failed")
  	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
- 	dbmap.AddTableWithName(User{}, "User").SetKeys(true, "Id")
+ 	dbmap.AddTableWithName(User{}, "User2").SetKeys(true, "Id")
  	err = dbmap.CreateTablesIfNotExists()
  	checkErr(err, "Create table failed")
 	return dbmap
@@ -30,7 +32,7 @@ func checkErr(err error, msg string) {
 
 func GetUsers(c *gin.Context) {
  	var users []User
- 	_, err := dbmap.Select(&users, "SELECT * FROM user")
+ 	_, err := dbmap.Select(&users, "SELECT * FROM user2")
 	if err == nil {
  		c.JSON(200, users)
  	} else {
@@ -40,11 +42,13 @@ func GetUsers(c *gin.Context) {
 }
 
 func GetUser(c *gin.Context) {
- 	id := c.Params.ByName("id")
+ 	param_id := c.Params.ByName("id")
+ 	id, _ := strconv.Atoi(param_id)
  	var user User
- 	err := dbmap.SelectOne(&user, "SELECT * FROM user WHERE id=?", id)
-	if err == nil {
- 		user_id, _ := strconv.ParseInt(id, 0, 64)
+ 	err := dbmap.SelectOne(&user, "SELECT * FROM user2 WHERE id=?", id)
+ 	//err := dbmap.SelectOne(&user, "SELECT * FROM user2 WHERE id=CAST(? AS INT)", id)
+ 	if err == nil {
+ 		user_id, _ := strconv.ParseInt(param_id, 0, 64)
 		content := &User{
  			Id: user_id,
  			Firstname: user.Firstname,
@@ -52,7 +56,10 @@ func GetUser(c *gin.Context) {
  		}
  		c.JSON(200, content)
  	} else {
- 	c.JSON(404, gin.H{"error": "user not found"})
+ 		//c.JSON(404, gin.H{"error": "user not found"})
+ 		c.JSON(404, gin.H{"error" : err})
+ 		//c.JSON(404, gin.H{"id" : reflect.TypeOf(id)})
+ 		//fmt.Println(reflect.TypeOf(id))
  	}
 	// curl -i http://localhost:8080/api/v1/users/1
 }
@@ -83,7 +90,7 @@ func PostUser(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
  	id := c.Params.ByName("id")
  	var user User
- 	err := dbmap.SelectOne(&user, "SELECT * FROM user WHERE id=?", id)
+ 	err := dbmap.SelectOne(&user, "SELECT * FROM user2 WHERE id=?", id)
 	if err == nil {
  		var json User
  		c.Bind(&json)
@@ -112,7 +119,7 @@ func UpdateUser(c *gin.Context) {
 func DeleteUser(c *gin.Context) {
  	id := c.Params.ByName("id")
 	var user User
- 	err := dbmap.SelectOne(&user, "SELECT id FROM user WHERE id=?", id)
+ 	err := dbmap.SelectOne(&user, "SELECT id FROM user2 WHERE id=?", id)
 	if err == nil {
 	 	_, err = dbmap.Delete(&user)
 		if err == nil {
@@ -124,6 +131,11 @@ func DeleteUser(c *gin.Context) {
  		c.JSON(404, gin.H{"error": "user not found"})
  	}
 	// curl -i -X DELETE http://localhost:8080/api/v1/users/1
+}
+
+func index (c *gin.Context) {
+    content := gin.H{"Hello": "World"}
+    c.JSON(200, content)
 }
 
 ////
@@ -143,6 +155,7 @@ func main() {
  		v1.PUT("/users/:id", UpdateUser)
  		v1.DELETE("/users/:id", DeleteUser)
  	}
+ 	r.GET("/", index)
 	r.Run(":8081")
 }
 
