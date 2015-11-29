@@ -44,10 +44,14 @@ func GetUsers(c *gin.Context) {
 func GetUser(c *gin.Context) {
  	param_id := c.Params.ByName("id")
  	id, _ := strconv.Atoi(param_id)
- 	var user User
- 	err := dbmap.SelectOne(&user, "SELECT * FROM user2 WHERE id=?", id)
- 	//err := dbmap.SelectOne(&user, "SELECT * FROM user2 WHERE id=CAST(? AS INT)", id)
- 	if err == nil {
+ 	//original//
+ 	//var user User
+ 	//err := dbmap.SelectOne(&user, "SELECT * FROM user2 WHERE id=?", id)
+ 	//new//
+ 	obj, err := dbmap.Get(User{}, id)
+ 	//c.JSON(404, gin.H{"obj" : obj})
+	user := obj.(*User)
+	if err == nil {
  		user_id, _ := strconv.ParseInt(param_id, 0, 64)
 		content := &User{
  			Id: user_id,
@@ -56,10 +60,8 @@ func GetUser(c *gin.Context) {
  		}
  		c.JSON(200, content)
  	} else {
- 		//c.JSON(404, gin.H{"error": "user not found"})
- 		c.JSON(404, gin.H{"error" : err})
- 		//c.JSON(404, gin.H{"id" : reflect.TypeOf(id)})
- 		//fmt.Println(reflect.TypeOf(id))
+ 		c.JSON(404, gin.H{"error": "user not found"})
+ 		//c.JSON(404, gin.H{"error" : err})
  	}
 	// curl -i http://localhost:8080/api/v1/users/1
 }
